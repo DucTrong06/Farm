@@ -92,49 +92,52 @@ public abstract class Plant {
         // Ensure health always stays within the range [0, 100]
         this.health = Math.min(100, Math.max(0, this.health + amount));
     }
-
+    
+    public int pestDamage() {
+		return 15; 
+	}
+    
     public boolean updateDaily() {
-        // If already harvested or the land is empty, no calculation is needed
         if (stage == Stage.HARVEST || stage == Stage.EMPTY) {
             return true; 
         }
-        beforeDailyUpdate();
-        
+
+        boolean hasEnoughWater = waterLevel >= waterNeed;
+        boolean hasEnoughFertilizer = fertilizerLevel >= fertilizerNeed;
+
         waterLevel = Math.max(0, waterLevel - waterNeed);
         fertilizerLevel = Math.max(0, fertilizerLevel - fertilizerNeed);
 
-        if (waterLevel < waterNeed || fertilizerLevel < fertilizerNeed) {           
-        	// Health logic: Lack of nutrients -> subtract 20 HP, Sufficient nutrients -> restore 5 HP
+        if (!hasEnoughWater || !hasEnoughFertilizer) {
             health -= 20;
         } else {
             health = Math.min(100, health + 5);
         }
 
         if (isPestInfected) {
-        	// If diseased -> call pestDamage to subtract health
             health -= pestDamage();
         }
-        
-        if (stage.canGrow() && waterLevel >= waterNeed && fertilizerLevel >= fertilizerNeed) {
-            // Growth logic: Only grow if in the development stage AND nutrients are sufficient
-            daysGrown++;
 
-        if (daysGrown >= growthTime && stage == Stage.SEED) stage = Stage.SEEDLING;
-        else if (daysGrown >= growthTime * 2 && stage == Stage.SEEDLING) stage = Stage.MATURE;
-        else if (daysGrown >= growthTime * 3 && stage == Stage.MATURE) stage = Stage.HARVEST;
-    		}
-        // if health < 0 =>
-        if (health <= 0) {
-            stage = stage.EMPTY;
-            return false;
+        if (stage.canGrow() && hasEnoughWater && hasEnoughFertilizer) {
+            daysGrown++;
+            
+            if (daysGrown >= growthTime && stage == Stage.SEED) {
+                stage = Stage.SEEDLING;
+            } else if (daysGrown >= growthTime * 2 && stage == Stage.SEEDLING) {
+                stage = Stage.MATURE;
+            } else if (daysGrown >= growthTime * 3 && stage == Stage.MATURE) {
+                stage = Stage.HARVEST;
             }
+        }
+        
+        if (health <= 0) {
+			stage = Stage.EMPTY;
+			return false; 
+		}
+        
         return true;
     }
-    
-    public void beforeDailyUpdate() {};
-    public int pestDamage() {
-        return 15;
-    }
+
     
     public String getDisplayName() { return displayName; }
     public int getSeedCost() { return seedCost; }
